@@ -1,129 +1,149 @@
+const {
+    Client,
+    GatewayIntentBits,
+    PermissionsBitField
+} = require('discord.js');
+
+const {
+    joinVoiceChannel,
+    entersState,
+    VoiceConnectionStatus
+} = require('@discordjs/voice');
+
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, PermissionsBitField } = require('discord.js');
-const { joinVoiceChannel } = require('@discordjs/voice');
-
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
-  ]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
 });
 
-const prefix = "!";
-const linkRegex = /(https?:\/\/[^\s]+)/i;
+const VOICE_CHANNEL_ID = '1500459025865642005';
 
-// 🔊 READY + دخول voice
-client.once('ready', async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+// Detect links
+const linkRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|(discord\.gg\/[^\s]+)/gi;
 
-  const guild = client.guilds.cache.first();
-  if (!guild) return;
+// ================= VOICE SYSTEM =================
 
-  const channel = guild.channels.cache.find(
-    c => c.name === "SERVER DEV BY SRAD" && c.isVoiceBased()
-  );
-
-  if (!channel) {
-    console.log("❌ ما لقيتش الروم الصوتية");
-    return;
-  }
-
-  joinVoiceChannel({
-    channelId: channel.id,
-    guildId: guild.id,
-    adapterCreator: guild.voiceAdapterCreator,
-  });
-
-  console.log("🎧 دخل للروم الصوتية");
-});
-
-// 🚫 منع الروابط + commands
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (!message.guild) return;
-
-  // 🚫 Anti-link
-  if (linkRegex.test(message.content)) {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-      try {
-        await message.delete();
-        await message.member.timeout(2 * 60 * 1000, "Sending links");
-
-        message.channel.send("🚫 ممنوع إرسال روابط + تم إعطاؤك timeout");
-
-        const logChannel = message.guild.channels.cache.find(c => c.name === "logs");
-        if (logChannel) {
-          logChannel.send(`⚠️ ${message.author.tag} أرسل رابط وتم معاقبته`);
-        }
-
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  }
-
-  if (!message.content.startsWith(prefix)) return;
-
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const cmd = args.shift().toLowerCase();
-
-  // 🏓 ping
-  if (cmd === "ping") {
-    return message.reply("🏓 pong");
-  }
-
-  // 🗣️ say
-  if (cmd === "say") {
-    const text = args.join(" ");
-    if (!text) return message.reply("❌ اكتب كلام");
-    return message.channel.send(text);
-  }
-
-  // 🎭 role
-  if (cmd === "role") {
-    const roleName = args.join(" ");
-    if (!roleName) return message.reply("❌ اكتب اسم role");
-
-    const role = message.guild.roles.cache.find(r => r.name === roleName);
-    if (!role) return message.reply("❌ role موش موجود");
+async function connectToVoice() {
 
     try {
-      await message.member.roles.add(role);
-      message.reply("✅ تم إعطاء role");
-    } catch {
-      message.reply("❌ ما نجمش نعطي role (permissions)");
+
+        const channel = await client.channels.fetch(VOICE_CHANNEL_ID);
+
+        if (!channel) {
+            return console.log('❌ Voice channel not found');
+        }
+
+        const connection = joinVoiceChannel({
+            channelId: channel.id,
+            guildId: channel.guild.id,
+            adapterCreator: channel.guild.voiceAdapterCreator,
+            selfDeaf: false,
+            selfMute: false
+        });
+
+        console.log('🎤 Bot joined voice');
+
+        // Reconnect system
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+
+            try {
+
+                await Promise.race([
+                    entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+                    entersState(connection, VoiceConnectionStatus.Connecting, 5000),
+                ]);
+
+            } catch {
+
+                console.log('🔄 Reconnecting voice...');
+
+                connection.destroy();
+
+                setTimeout(() => {
+                    connectToVoice();
+                }, 3000);
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
     }
-  }
+}
 
-  // ℹ️ help
-  if (cmd === "help") {
-    return message.channel.send(`
-📜 Commands:
-!ping → اختبار
-!say → يخلي البوت يقول كلام
-!role → يعطيك role
-🚫 links → timeout
-    `);
-  }
+// ================= READY =================
+
+client.once('clientReady', async () => {
+
+    console.log(`✅ Logged in as ${client.user.tag}`);
+
+    connectToVoice();
 });
 
-// 🚫 يمنع أي حد يدخل الروم الصوتية
-client.on('voiceStateUpdate', (oldState, newState) => {
-  const channelName = "SERVER DEV BY SRAD";
+// ================= AUTO KICK =================
 
-  const channel = newState.guild.channels.cache.find(
-    c => c.name === channelName && c.isVoiceBased()
-  );
+client.on('voiceStateUpdate', async (oldState, newState) => {
 
-  if (!channel) return;
+    if (
+        newState.channelId === VOICE_CHANNEL_ID &&
+        !newState.member.user.bot
+    ) {
 
-  if (newState.channelId === channel.id && !newState.member.user.bot) {
-    newState.disconnect("❌ هذا الروم للبوت فقط");
-  }
+        try {
+
+            await newState.disconnect();
+
+            console.log(`🚫 ${newState.member.user.tag} got kicked`);
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
 });
 
-// 🔐 login من .env
+// ================= ANTI LINK =================
+
+client.on('messageCreate', async (message) => {
+
+    if (message.author.bot) return;
+
+    // Ignore admins
+    if (
+        message.member.permissions.has(
+            PermissionsBitField.Flags.Administrator
+        )
+    ) return;
+
+    // Detect links
+    if (linkRegex.test(message.content)) {
+
+        try {
+
+            // Delete message
+            await message.delete();
+
+            // Warning message
+            const warn = await message.channel.send({
+                content: `⚠️ ${message.author} ta3rafch 7ram 3aych weldi`
+            });
+
+            // Delete warning after 5 sec
+            setTimeout(() => {
+                warn.delete().catch(() => {});
+            }, 5000);
+
+            console.log(`🚫 Link deleted from ${message.author.tag}`);
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+});
+
+// ================= LOGIN =================
+
 client.login(process.env.TOKEN);
