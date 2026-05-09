@@ -147,3 +147,91 @@ client.on('messageCreate', async (message) => {
 // ================= LOGIN =================
 
 client.login(process.env.TOKEN);
+const {
+    Client,
+    GatewayIntentBits,
+    PermissionsBitField
+} = require('discord.js');
+
+require('dotenv').config();
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
+});
+
+const PREFIX = "!";
+
+client.once('clientReady', () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+});
+
+client.on('messageCreate', async (message) => {
+
+    if (message.author.bot) return;
+
+    if (!message.content.startsWith(PREFIX)) return;
+
+    // ================= LOCK ROOM =================
+
+    if (message.content === "!saker_room") {
+
+        // Admin only
+        if (
+            !message.member.permissions.has(
+                PermissionsBitField.Flags.Administrator
+            )
+        ) {
+            return message.reply("❌ ma3andekch permission");
+        }
+
+        try {
+
+            await message.channel.permissionOverwrites.edit(
+                message.guild.roles.everyone,
+                {
+                    SendMessages: false
+                }
+            );
+
+            message.channel.send("🔒 room تسكرت");
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // ================= OPEN ROOM =================
+
+    if (message.content === "!hel_room") {
+
+        // Admin only
+        if (
+            !message.member.permissions.has(
+                PermissionsBitField.Flags.Administrator
+            )
+        ) {
+            return message.reply("❌ ma3andekch permission");
+        }
+
+        try {
+
+            await message.channel.permissionOverwrites.edit(
+                message.guild.roles.everyone,
+                {
+                    SendMessages: true
+                }
+            );
+
+            message.channel.send("🔓 room تحلت");
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+});
+
+client.login(process.env.TOKEN);
