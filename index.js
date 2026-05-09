@@ -184,34 +184,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // Ignore admins
-    if (
-        message.member.permissions.has(
-            PermissionsBitField.Flags.Administrator
-        )
-    ) return;
-
-    // Detect links
-    if (linkRegex.test(message.content)) {
-
-        try {
-
-            await message.delete();
-
-            const warn = await message.channel.send({
-                content: `⚠️ ${message.author} ta3rafch 7ram 3aych weldi`
-            });
-
-            setTimeout(() => {
-                warn.delete().catch(() => {});
-            }, 5000);
-
-            console.log(`🚫 Link deleted from ${message.author.tag}`);
-
-        } catch (err) {
-            console.error(err);
-        }
-    }
-        // ================= AI CHAT =================
+       // ================= AI CHAT =================
 
     if (message.content.startsWith("!ai")) {
 
@@ -246,4 +219,32 @@ client.on('messageCreate', async (message) => {
             message.reply("❌ AI Error");
         }
     }
+    if (
+        message.member.permissions.has(
+            PermissionsBitField.Flags.Administrator
+        )
+    ) return;
+
+    // Detect links
+    if (linkRegex.test(message.content)) {
+
+        try {
+
+            await message.delete();
+
+            const warn = await message.channel.send({
+                content: `⚠️ ${message.author} ta3rafch 7ram 3aych weldi`
+            });
+
+            setTimeout(() => {
+                warn.delete().catch(() => {});
+            }, 5000);
+
+            console.log(`🚫 Link deleted from ${message.author.tag}`);
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+     
 });
