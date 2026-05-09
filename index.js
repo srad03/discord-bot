@@ -187,7 +187,10 @@ client.on('messageCreate', async (message) => {
 
            // ================= AI CHAT =================
 
-    if (message.content.startsWith("!ai")) {
+    if (
+        message.channel.id === "1502760592094527540" &&
+        message.content.startsWith("!ai")
+    ) {
 
         try {
 
