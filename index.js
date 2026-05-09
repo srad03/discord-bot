@@ -187,16 +187,13 @@ client.on('messageCreate', async (message) => {
 
            // ================= AI CHAT =================
 
-    if (
-        message.channel.id === "1502760592094527540" &&
-        message.content.startsWith("!ai")
-    ) {
+   if (
+    message.channel.id === "1502760592094527540"
+) {
 
         try {
 
-            const question = message.content
-                .replace("!ai", "")
-                .trim();
+          const question = message.content.trim();
 
             if (!question) {
                 return message.reply("❌ اكتب سؤال");
