@@ -129,10 +129,12 @@ client.on('messageCreate', async (message) => {
 
         await message.channel.permissionOverwrites.edit(
             message.guild.roles.everyone,
-            {
-                SendMessages: false
-            }
-        );
+           {
+    SendMessages: false,
+    CreatePublicThreads: false,
+    CreatePrivateThreads: false
+        }
+    );
 
         await message.delete().catch(() => {});
 
@@ -158,11 +160,13 @@ client.on('messageCreate', async (message) => {
         }
 
         await message.channel.permissionOverwrites.edit(
-            message.guild.roles.everyone,
-            {
-                SendMessages: true
-            }
-        );
+    message.guild.roles.everyone,
+    {
+        SendMessages: true,
+        CreatePublicThreads: true,
+        CreatePrivateThreads: true
+    }
+);
 
         await message.delete().catch(() => {});
 
