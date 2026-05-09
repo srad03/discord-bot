@@ -107,42 +107,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
 // ================= ANTI LINK =================
 
-client.on('messageCreate', async (message) => {
-
-    if (message.author.bot) return;
-
-    // Ignore admins
-    if (
-        message.member.permissions.has(
-            PermissionsBitField.Flags.Administrator
-        )
-    ) return;
-
-    // Detect links
-    if (linkRegex.test(message.content)) {
-
-        try {
-
-            // Delete message
-            await message.delete();
-
-            // Warning message
-            const warn = await message.channel.send({
-                content: `⚠️ ${message.author} ta3rafch 7ram 3aych weldi`
-            });
-
-            // Delete warning after 5 sec
-            setTimeout(() => {
-                warn.delete().catch(() => { });
-            }, 5000);
-
-            console.log(`🚫 Link deleted from ${message.author.tag}`);
-
-        } catch (err) {
-            console.error(err);
-        }
-    }
-});
 
 // ================= LOGIN =================
 
@@ -150,8 +114,6 @@ client.login(process.env.TOKEN);
 client.on('messageCreate', async (message) => {
 
     if (message.author.bot) return;
-
-    const PREFIX = "!";
 
     // ================= LOCK ROOM =================
 
@@ -172,7 +134,15 @@ client.on('messageCreate', async (message) => {
             }
         );
 
-        return message.channel.send("🔒 room تسكرت");
+        await message.delete().catch(() => {});
+
+        const msg = await message.channel.send("🔒 room تسكرت");
+
+        setTimeout(() => {
+            msg.delete().catch(() => {});
+        }, 2000);
+
+        return;
     }
 
     // ================= OPEN ROOM =================
@@ -194,17 +164,25 @@ client.on('messageCreate', async (message) => {
             }
         );
 
-        return message.channel.send("🔓 room تحلت");
+        await message.delete().catch(() => {});
+
+        const msg = await message.channel.send("🔓 room تحلت");
+
+        setTimeout(() => {
+            msg.delete().catch(() => {});
+        }, 2000);
+
+        return;
     }
 
-    // ================= ANTI LINK =================
-
+    // Ignore admins
     if (
         message.member.permissions.has(
             PermissionsBitField.Flags.Administrator
         )
     ) return;
 
+    // Detect links
     if (linkRegex.test(message.content)) {
 
         try {
@@ -218,6 +196,8 @@ client.on('messageCreate', async (message) => {
             setTimeout(() => {
                 warn.delete().catch(() => {});
             }, 5000);
+
+            console.log(`🚫 Link deleted from ${message.author.tag}`);
 
         } catch (err) {
             console.error(err);
