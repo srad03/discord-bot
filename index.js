@@ -11,16 +11,10 @@ const {
 } = require('@discordjs/voice');
 
 require('dotenv').config();
-const {
-    GoogleGenerativeAI
-} = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
-const genAI = new GoogleGenerativeAI(
-    process.env.GEMINI_API_KEY
-);
-
-const model = genAI.getGenerativeModel({
-   model: "gemini-2.0-flash"
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
 });
 const client = new Client({
     intents: [
@@ -191,7 +185,7 @@ client.on('messageCreate', async (message) => {
 
     // Ignore admins
 
-        // ================= AI CHAT =================
+           // ================= AI CHAT =================
 
     if (message.content.startsWith("!ai")) {
 
@@ -205,17 +199,29 @@ client.on('messageCreate', async (message) => {
                 return message.reply("❌ اكتب سؤال");
             }
 
-            const result = await model.generateContent(question);
+            const chat = await groq.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: "أنت AI تونسي funny يهدر دارجة تونسية"
+                    },
+                    {
+                        role: "user",
+                        content: question
+                    }
+                ],
+                model: "llama3-70b-8192"
+            });
 
-            const response = result.response.text();
+            message.reply(
+                chat.choices[0].message.content
+            );
 
-            message.reply(response);
+        } catch (err) {
 
-                } catch (err) {
+            console.error(err);
 
-            console.error("GEMINI ERROR:", err);
-
-            message.reply("❌ Gemini Error");
+            message.reply("❌ Groq Error");
         }
     }
     if (
