@@ -211,9 +211,9 @@ client.on('messageCreate', async (message) => {
 
             message.reply(response);
 
-        } catch (err) {
+                } catch (err) {
 
-            console.error(err);
+            console.error("GEMINI ERROR:", err);
 
             message.reply("❌ Gemini Error");
         }
