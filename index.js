@@ -11,7 +11,11 @@ const {
 } = require('@discordjs/voice');
 
 require('dotenv').config();
+const OpenAI = require("openai");
 
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -205,6 +209,41 @@ client.on('messageCreate', async (message) => {
 
         } catch (err) {
             console.error(err);
+        }
+    }
+        // ================= AI CHAT =================
+
+    if (message.content.startsWith("!ai")) {
+
+        try {
+
+            const question = message.content
+                .replace("!ai", "")
+                .trim();
+
+            if (!question) {
+                return message.reply("❌ اكتب سؤال");
+            }
+
+            const response = await openai.chat.completions.create({
+                model: "gpt-4.1-mini",
+                messages: [
+                    {
+                        role: "user",
+                        content: question
+                    }
+                ]
+            });
+
+            message.reply(
+                response.choices[0].message.content
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            message.reply("❌ AI Error");
         }
     }
 });
