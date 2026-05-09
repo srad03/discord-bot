@@ -210,7 +210,7 @@ client.on('messageCreate', async (message) => {
                         content: question
                     }
                 ],
-                model: "llama3-70b-8192"
+                model: "llama-3.3-70b-versatile"
             });
 
             message.reply(
