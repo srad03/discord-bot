@@ -133,7 +133,7 @@ client.on('messageCreate', async (message) => {
 
             // Delete warning after 5 sec
             setTimeout(() => {
-                warn.delete().catch(() => {});
+                warn.delete().catch(() => { });
             }, 5000);
 
             console.log(`🚫 Link deleted from ${message.author.tag}`);
@@ -147,91 +147,80 @@ client.on('messageCreate', async (message) => {
 // ================= LOGIN =================
 
 client.login(process.env.TOKEN);
-const {
-    Client,
-    GatewayIntentBits,
-    PermissionsBitField
-} = require('discord.js');
-
-require('dotenv').config();
-
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
-
-const PREFIX = "!";
-
-client.once('clientReady', () => {
-    console.log(`✅ Logged in as ${client.user.tag}`);
-});
-
 client.on('messageCreate', async (message) => {
 
     if (message.author.bot) return;
 
-    if (!message.content.startsWith(PREFIX)) return;
+    const PREFIX = "!";
 
     // ================= LOCK ROOM =================
 
     if (message.content === "!saker_room") {
 
-        // Admin only
         if (
             !message.member.permissions.has(
                 PermissionsBitField.Flags.Administrator
             )
         ) {
-            return message.reply("❌ ma3andekch permission");
+            return;
         }
 
-        try {
+        await message.channel.permissionOverwrites.edit(
+            message.guild.roles.everyone,
+            {
+                SendMessages: false
+            }
+        );
 
-            await message.channel.permissionOverwrites.edit(
-                message.guild.roles.everyone,
-                {
-                    SendMessages: false
-                }
-            );
-
-            message.channel.send("🔒 room تسكرت");
-
-        } catch (err) {
-            console.error(err);
-        }
+        return message.channel.send("🔒 room تسكرت");
     }
 
     // ================= OPEN ROOM =================
 
     if (message.content === "!hel_room") {
 
-        // Admin only
         if (
             !message.member.permissions.has(
                 PermissionsBitField.Flags.Administrator
             )
         ) {
-            return message.reply("❌ ma3andekch permission");
+            return;
         }
+
+        await message.channel.permissionOverwrites.edit(
+            message.guild.roles.everyone,
+            {
+                SendMessages: true
+            }
+        );
+
+        return message.channel.send("🔓 room تحلت");
+    }
+
+    // ================= ANTI LINK =================
+
+    if (
+        message.member.permissions.has(
+            PermissionsBitField.Flags.Administrator
+        )
+    ) return;
+
+    if (linkRegex.test(message.content)) {
 
         try {
 
-            await message.channel.permissionOverwrites.edit(
-                message.guild.roles.everyone,
-                {
-                    SendMessages: true
-                }
-            );
+            await message.delete();
 
-            message.channel.send("🔓 room تحلت");
+            const warn = await message.channel.send({
+                content: `⚠️ ${message.author} ta3rafch 7ram 3aych weldi`
+            });
+
+            setTimeout(() => {
+                warn.delete().catch(() => {});
+            }, 5000);
 
         } catch (err) {
             console.error(err);
         }
     }
 });
-
-client.login(process.env.TOKEN);
